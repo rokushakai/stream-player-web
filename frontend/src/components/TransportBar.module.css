@@ -1,0 +1,92 @@
+.container {
+  background: var(--bg-secondary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timeline {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  position: relative;
+  transition: height 0.15s;
+}
+
+.timeline:hover {
+  height: 6px;
+}
+
+.progress {
+  height: 100%;
+  background: var(--accent);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.playhead {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.timeline:hover .playhead {
+  opacity: 1;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 1rem;
+}
+
+.playButton {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.playButton:hover {
+  color: var(--accent);
+}
+
+.time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.volumeControl {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.volumeIcon {
+  font-size: 0.875rem;
+}
+
+.volumeSlider {
+  width: 80px;
+  accent-color: var(--accent);
+}
+
+.rate {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}

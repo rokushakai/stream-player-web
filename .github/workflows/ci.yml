@@ -24,7 +24,7 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
-      - run: npm run test
+      - run: npm run test -- --coverage
       - run: npm run build
 
   backend:
@@ -42,7 +42,7 @@ jobs:
 
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest -v
+      - run: pytest --cov=app --cov-report=xml -v
 
   sonar:
     name: SonarCloud Scan

@@ -5,7 +5,6 @@ import { TransportBar } from "./components/TransportBar";
 import { useYouTubePlayer } from "./hooks/useYouTubePlayer";
 import { extractVideoId } from "./utils/youtube-api";
 import type { StreamInfo } from "./types/youtube";
-import styles from "./App.module.css";
 
 function App() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,11 +32,10 @@ function App() {
       setTitle(null);
 
       try {
-        // Try to extract video ID directly from URL first
         let videoId = extractVideoId(url);
+        let resolvedTitle: string | null = null;
 
         if (!videoId) {
-          // Fall back to backend resolution
           const res = await fetch("/api/resolve", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -51,14 +49,12 @@ function App() {
 
           const info: StreamInfo = await res.json();
           videoId = info.video_id;
-          setTitle(info.title);
+          resolvedTitle = info.title;
         }
 
         if (videoId) {
           loadVideo(videoId);
-          if (!title) {
-            setTitle(url);
-          }
+          setTitle(resolvedTitle || url);
         } else {
           throw new Error("Could not extract video ID from URL");
         }
@@ -68,11 +64,11 @@ function App() {
         setIsLoading(false);
       }
     },
-    [loadVideo, title],
+    [loadVideo],
   );
 
   return (
-    <div className={styles.app}>
+    <div className="flex flex-col min-h-screen bg-bg-primary">
       <UrlBar
         onSubmit={handleUrlSubmit}
         isLoading={isLoading}

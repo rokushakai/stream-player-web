@@ -1,16 +1,15 @@
 import { PlayerState } from "../types/youtube";
 import { formatTime } from "../utils/format";
-import styles from "./TransportBar.module.css";
 
 interface TransportBarProps {
-  currentTime: number;
-  duration: number;
-  playerState: PlayerState;
-  volume: number;
-  playbackRate: number;
-  onTogglePlay: () => void;
-  onSeek: (time: number) => void;
-  onVolumeChange: (volume: number) => void;
+  readonly currentTime: number;
+  readonly duration: number;
+  readonly playerState: PlayerState;
+  readonly volume: number;
+  readonly playbackRate: number;
+  readonly onTogglePlay: () => void;
+  readonly onSeek: (time: number) => void;
+  readonly onVolumeChange: (volume: number) => void;
 }
 
 export function TransportBar({
@@ -33,46 +32,49 @@ export function TransportBar({
   };
 
   return (
-    <div className={styles.container}>
+    <div className="bg-bg-secondary border-t border-white/10">
       {/* Timeline / Progress bar */}
       <div
-        className={styles.timeline}
+        className="h-1 bg-white/15 cursor-pointer relative hover:h-1.5 transition-[height]"
         onClick={handleTimelineClick}
         data-testid="timeline"
       >
         <div
-          className={styles.progress}
+          className="h-full bg-accent absolute top-0 left-0"
           style={{ width: `${progress}%` }}
         />
         <div
-          className={styles.playhead}
+          className="w-3 h-3 rounded-full bg-white absolute top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity"
           style={{ left: `${progress}%` }}
         />
       </div>
 
       {/* Controls row */}
-      <div className={styles.controls}>
+      <div className="flex items-center gap-3 px-4 py-1.5">
         <button
-          className={styles.playButton}
+          className="bg-transparent border-none text-text-primary text-lg cursor-pointer p-1 leading-none hover:text-accent"
           onClick={onTogglePlay}
           data-testid="play-button"
         >
-          {isPlaying ? "⏸" : "▶"}
+          {isPlaying ? "\u23F8" : "\u25B6"}
         </button>
 
-        <span className={styles.time} data-testid="time-display">
+        <span
+          className="text-xs text-text-secondary tabular-nums"
+          data-testid="time-display"
+        >
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 
-        <div className={styles.spacer} />
+        <div className="flex-1" />
 
-        <div className={styles.volumeControl}>
-          <span className={styles.volumeIcon}>
-            {volume === 0 ? "🔇" : volume < 50 ? "🔉" : "🔊"}
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">
+            {volume === 0 ? "\uD83D\uDD07" : volume < 50 ? "\uD83D\uDD09" : "\uD83D\uDD0A"}
           </span>
           <input
             type="range"
-            className={styles.volumeSlider}
+            className="w-20 accent-accent"
             min={0}
             max={100}
             value={volume}
@@ -82,7 +84,10 @@ export function TransportBar({
         </div>
 
         {playbackRate !== 1 && (
-          <span className={styles.rate} data-testid="playback-rate">
+          <span
+            className="text-xs text-accent font-semibold"
+            data-testid="playback-rate"
+          >
             {playbackRate}x
           </span>
         )}

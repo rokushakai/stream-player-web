@@ -1,18 +1,18 @@
-import styles from "./VideoPlayer.module.css";
-
 const PLAYER_CONTAINER_ID = "youtube-player";
 
 interface VideoPlayerProps {
-  /** Pass this ID to useYouTubePlayer's containerId */
-  containerId?: string;
+  readonly containerId?: string;
 }
 
 export function VideoPlayer({
   containerId = PLAYER_CONTAINER_ID,
 }: VideoPlayerProps) {
   return (
-    <div className={styles.container} data-testid="video-player">
-      <div id={containerId} className={styles.player} />
+    <div
+      className="flex-1 bg-black flex items-center justify-center min-h-[300px] relative"
+      data-testid="video-player"
+    >
+      <div id={containerId} className="w-full h-full absolute top-0 left-0" />
     </div>
   );
 }

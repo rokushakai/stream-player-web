@@ -86,13 +86,23 @@ jobs:
           sed -i 's|SF:src/|SF:frontend/src/|g' frontend/coverage/lcov.info
           echo "--- Frontend lcov.info (after fix) ---"
           head -5 frontend/coverage/lcov.info
+
           echo "--- Backend coverage.xml (before fix) ---"
-          grep '<source>' backend/coverage.xml || true
-          grep 'filename=' backend/coverage.xml | head -3 || true
-          sed -i 's|<source>.*</source>|<source>backend</source>|g' backend/coverage.xml
+          cat backend/coverage.xml
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('backend/coverage.xml')
+          root = tree.getroot()
+          for source in root.iter('source'):
+              source.text = 'backend/app'
+          for cls in root.iter('class'):
+              fn = cls.get('filename', '')
+              if fn.startswith('app/'):
+                  cls.set('filename', fn[4:])
+          tree.write('backend/coverage.xml', xml_declaration=True, encoding='UTF-8')
+          "
           echo "--- Backend coverage.xml (after fix) ---"
-          grep '<source>' backend/coverage.xml || true
-          grep 'filename=' backend/coverage.xml | head -3 || true
+          cat backend/coverage.xml
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2

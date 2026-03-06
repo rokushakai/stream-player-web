@@ -79,6 +79,21 @@ jobs:
           name: backend-coverage
           path: backend
 
+      - name: Fix coverage paths for SonarCloud
+        run: |
+          echo "--- Frontend lcov.info (before fix) ---"
+          head -5 frontend/coverage/lcov.info
+          sed -i 's|SF:src/|SF:frontend/src/|g' frontend/coverage/lcov.info
+          echo "--- Frontend lcov.info (after fix) ---"
+          head -5 frontend/coverage/lcov.info
+          echo "--- Backend coverage.xml (before fix) ---"
+          grep '<source>' backend/coverage.xml || true
+          grep 'filename=' backend/coverage.xml | head -3 || true
+          sed -i 's|<source>.*</source>|<source>backend</source>|g' backend/coverage.xml
+          echo "--- Backend coverage.xml (after fix) ---"
+          grep '<source>' backend/coverage.xml || true
+          grep 'filename=' backend/coverage.xml | head -3 || true
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:

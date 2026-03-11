@@ -6,12 +6,12 @@ export function loadYouTubeAPI(): Promise<void> {
   if (apiLoadPromise) return apiLoadPromise;
 
   apiLoadPromise = new Promise<void>((resolve) => {
-    if (window.YT?.Player) {
+    if (globalThis.YT?.Player) {
       resolve();
       return;
     }
 
-    window.onYouTubeIframeAPIReady = () => resolve();
+    globalThis.onYouTubeIframeAPIReady = () => resolve();
 
     const script = document.createElement("script");
     script.src = "https://www.youtube.com/iframe_api";

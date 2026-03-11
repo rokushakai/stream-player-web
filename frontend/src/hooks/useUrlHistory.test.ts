@@ -97,10 +97,13 @@ describe("useUrlHistory - US-1.2: URL入力履歴", () => {
       });
 
       expect(result.current.history).toHaveLength(50);
+      const first = result.current.history[0];
+      const last = result.current.history[49];
+      if (!first || !last) throw new Error("Expected history entries at index 0 and 49");
       // Most recent (54) should be first
-      expect(result.current.history[0]!.url).toBe("https://example.com/54");
+      expect(first.url).toBe("https://example.com/54");
       // Oldest kept (5) should be last
-      expect(result.current.history[49]!.url).toBe("https://example.com/5");
+      expect(last.url).toBe("https://example.com/5");
     });
   });
 

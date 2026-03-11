@@ -457,8 +457,10 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
 
       // Select second item (mouseDown triggers onMouseDown handler)
       const items = screen.getAllByTestId("url-history-item");
+      const secondItem = items[1];
+      if (!secondItem) throw new Error("Expected history item at index 1");
       await act(async () => {
-        fireEvent.mouseDown(items[1]!);
+        fireEvent.mouseDown(secondItem);
       });
 
       await waitFor(() => {

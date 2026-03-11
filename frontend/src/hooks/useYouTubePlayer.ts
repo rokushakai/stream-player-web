@@ -58,7 +58,7 @@ export function useYouTubePlayer({
   // Poll current time while playing
   const startTimePolling = useCallback(() => {
     if (timerRef.current) return;
-    timerRef.current = window.setInterval(() => {
+    timerRef.current = globalThis.setInterval(() => {
       const player = playerRef.current;
       if (player) {
         setCurrentTime(player.getCurrentTime());
@@ -80,7 +80,7 @@ export function useYouTubePlayer({
     loadYouTubeAPI().then(() => {
       if (destroyed) return;
 
-      const player = new window.YT.Player(containerId, {
+      const player = new globalThis.YT.Player(containerId, {
         width: "100%",
         height: "100%",
         host: "https://www.youtube-nocookie.com",
@@ -92,7 +92,7 @@ export function useYouTubePlayer({
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
-          origin: window.location.origin,
+          origin: globalThis.location.origin,
         },
         events: {
           onReady: () => {

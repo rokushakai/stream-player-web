@@ -52,7 +52,7 @@ export function UrlBar({
 
   return (
     <div className="px-5 py-3 bg-bg-secondary border-b border-white/10">
-      <div ref={wrapperRef} className="relative" onBlur={handleBlur}>
+      <div ref={wrapperRef} className="relative">
         <form className="flex gap-3" onSubmit={handleSubmit}>
           <input
             type="text"
@@ -60,6 +60,7 @@ export function UrlBar({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onFocus={handleFocus}
+            onBlur={handleBlur}
             placeholder="Enter YouTube URL..."
             disabled={isLoading}
             data-testid="url-input"

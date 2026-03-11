@@ -41,13 +41,27 @@ export function ResizeSash({ onResize }: ResizeSashProps) {
     document.body.style.userSelect = "none";
   };
 
+  const KEYBOARD_STEP = 10;
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      onResize(-KEYBOARD_STEP);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      onResize(KEYBOARD_STEP);
+    }
+  };
+
   return (
     <div
       className="h-1.5 bg-bg-panel cursor-row-resize hover:bg-accent/50 transition-colors flex-shrink-0"
       onMouseDown={handleMouseDown}
+      onKeyDown={handleKeyDown}
       role="separator"
       aria-orientation="horizontal"
       aria-label="Resize video and panels"
+      aria-valuenow={0}
       tabIndex={0}
       data-testid="resize-sash"
     />

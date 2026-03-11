@@ -64,14 +64,14 @@ export interface StreamInfo {
 }
 
 declare global {
-  interface Window {
-    YT: {
-      Player: new (
-        elementId: string | HTMLElement,
-        options: PlayerOptions,
-      ) => YouTubePlayer;
-      PlayerState: typeof PlayerState;
-    };
-    onYouTubeIframeAPIReady: () => void;
-  }
+  // eslint-disable-next-line no-var
+  var YT: {
+    Player: new (
+      elementId: string | HTMLElement,
+      options: PlayerOptions,
+    ) => YouTubePlayer;
+    PlayerState: typeof PlayerState;
+  };
+  // eslint-disable-next-line no-var
+  var onYouTubeIframeAPIReady: () => void;
 }

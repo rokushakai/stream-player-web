@@ -148,7 +148,9 @@ describe("UrlBar", () => {
       );
       fireEvent.focus(screen.getByTestId("url-input"));
       const items = screen.getAllByTestId("url-history-item");
-      fireEvent.mouseDown(items[1]!);
+      const secondItem = items[1];
+      if (!secondItem) throw new Error("Expected history item at index 1");
+      fireEvent.mouseDown(secondItem);
       expect(onSelectHistory).toHaveBeenCalledWith(historyEntries[1]);
     });
 

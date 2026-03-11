@@ -15,9 +15,11 @@ export function VideoPlayer({
       data-testid="video-player"
     >
       <div id={containerId} className="w-full h-full pointer-events-none" />
-      <div
-        className="absolute inset-0"
+      <button
+        type="button"
+        className="absolute inset-0 w-full h-full bg-transparent border-none cursor-pointer p-0"
         data-testid="video-overlay"
+        aria-label="Toggle play"
         onClick={onTogglePlay}
       />
     </div>

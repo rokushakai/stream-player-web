@@ -1,6 +1,12 @@
 import { PlayerState } from "../types/youtube";
 import { formatTime } from "../utils/format";
 
+function getVolumeIcon(volume: number): string {
+  if (volume === 0) return "\uD83D\uDD07";
+  if (volume < 50) return "\uD83D\uDD09";
+  return "\uD83D\uDD0A";
+}
+
 interface TransportBarProps {
   readonly currentTime: number;
   readonly duration: number;
@@ -74,7 +80,7 @@ export function TransportBar({
 
         <div className="flex items-center gap-1.5">
           <span className="text-sm">
-            {volume === 0 ? "\uD83D\uDD07" : volume < 50 ? "\uD83D\uDD09" : "\uD83D\uDD0A"}
+            {getVolumeIcon(volume)}
           </span>
           <input
             type="range"

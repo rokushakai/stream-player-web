@@ -458,7 +458,7 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
       // Select second item (mouseDown triggers onMouseDown handler)
       const items = screen.getAllByTestId("url-history-item");
       await act(async () => {
-        fireEvent.mouseDown(items[1]);
+        fireEvent.mouseDown(items[1]!);
       });
 
       await waitFor(() => {

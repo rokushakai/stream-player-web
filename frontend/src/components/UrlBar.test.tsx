@@ -148,7 +148,7 @@ describe("UrlBar", () => {
       );
       fireEvent.focus(screen.getByTestId("url-input"));
       const items = screen.getAllByTestId("url-history-item");
-      fireEvent.mouseDown(items[1]);
+      fireEvent.mouseDown(items[1]!);
       expect(onSelectHistory).toHaveBeenCalledWith(historyEntries[1]);
     });
 

@@ -98,9 +98,9 @@ describe("useUrlHistory - US-1.2: URL入力履歴", () => {
 
       expect(result.current.history).toHaveLength(50);
       // Most recent (54) should be first
-      expect(result.current.history[0].url).toBe("https://example.com/54");
+      expect(result.current.history[0]!.url).toBe("https://example.com/54");
       // Oldest kept (5) should be last
-      expect(result.current.history[49].url).toBe("https://example.com/5");
+      expect(result.current.history[49]!.url).toBe("https://example.com/5");
     });
   });
 

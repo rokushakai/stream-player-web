@@ -83,6 +83,7 @@ export function useYouTubePlayer({
       const player = new window.YT.Player(containerId, {
         width: "100%",
         height: "100%",
+        host: "https://www.youtube-nocookie.com",
         playerVars: {
           autoplay: 0,
           controls: 0,
@@ -91,6 +92,7 @@ export function useYouTubePlayer({
           modestbranding: 1,
           rel: 0,
           playsinline: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: () => {
@@ -131,13 +133,32 @@ export function useYouTubePlayer({
     };
   }, [containerId, onStateChange, onReady, onError, startTimePolling, stopTimePolling]);
 
-  const loadVideo = useCallback((videoId: string) => {
-    playerRef.current?.stopVideo();
-    // Use cueVideoById + playVideo for more control
-    playerRef.current?.seekTo(0, true);
-    // loadVideoById is available on the player but not in our minimal types
-    (playerRef.current as unknown as { loadVideoById(id: string): void })?.loadVideoById(videoId);
+  const pendingVideoId = useRef<string | null>(null);
+
+  const doLoadVideo = useCallback((player: YouTubePlayer, videoId: string) => {
+    if (typeof player.stopVideo === "function") {
+      player.stopVideo();
+    }
+    (player as unknown as { loadVideoById(id: string): void }).loadVideoById(videoId);
   }, []);
+
+  // When the player becomes ready, load any pending video
+  useEffect(() => {
+    if (isReady && pendingVideoId.current && playerRef.current) {
+      doLoadVideo(playerRef.current, pendingVideoId.current);
+      pendingVideoId.current = null;
+    }
+  }, [isReady, doLoadVideo]);
+
+  const loadVideo = useCallback((videoId: string) => {
+    const player = playerRef.current;
+    if (player && typeof player.stopVideo === "function") {
+      doLoadVideo(player, videoId);
+    } else {
+      // Player not ready yet — queue for when it is
+      pendingVideoId.current = videoId;
+    }
+  }, [doLoadVideo]);
 
   const togglePlay = useCallback(() => {
     const player = playerRef.current;

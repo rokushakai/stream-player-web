@@ -23,14 +23,25 @@ export function loadYouTubeAPI(): Promise<void> {
 
 /** Extract video ID from various YouTube URL formats */
 export function extractVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
+  const pattern =
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+  const result = pattern.exec(url);
+  return result?.[1] ?? null;
+}
 
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match?.[1]) return match[1];
-  }
-  return null;
+/** Check if a string looks like a valid URL */
+export function isValidUrl(input: string): boolean {
+  return /^https?:\/\/.+/.test(input);
+}
+
+/** Fetch video title from YouTube oEmbed API (no API key required) */
+export async function fetchYouTubeTitle(
+  videoId: string,
+): Promise<string | null> {
+  const videoUrl = "https://www.youtube.com/watch?v=" + videoId;
+  const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
+  const res = await fetch(oembedUrl);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.title ?? null;
 }

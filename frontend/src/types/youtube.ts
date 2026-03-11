@@ -35,6 +35,7 @@ export interface PlayerOptions {
   height?: string | number;
   width?: string | number;
   videoId?: string;
+  host?: string;
   playerVars?: PlayerVars;
   events?: {
     onReady?: (event: PlayerEvent) => void;

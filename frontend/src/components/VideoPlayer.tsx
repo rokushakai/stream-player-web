@@ -2,17 +2,24 @@ const PLAYER_CONTAINER_ID = "youtube-player";
 
 interface VideoPlayerProps {
   readonly containerId?: string;
+  readonly onTogglePlay?: () => void;
 }
 
 export function VideoPlayer({
   containerId = PLAYER_CONTAINER_ID,
+  onTogglePlay,
 }: VideoPlayerProps) {
   return (
     <div
-      className="flex-1 bg-black flex items-center justify-center min-h-[300px] relative"
+      className="relative w-full h-full bg-black"
       data-testid="video-player"
     >
-      <div id={containerId} className="w-full h-full absolute top-0 left-0" />
+      <div id={containerId} className="w-full h-full pointer-events-none" />
+      <div
+        className="absolute inset-0"
+        data-testid="video-overlay"
+        onClick={onTogglePlay}
+      />
     </div>
   );
 }

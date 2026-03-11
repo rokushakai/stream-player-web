@@ -10,6 +10,8 @@ interface TransportBarProps {
   readonly onTogglePlay: () => void;
   readonly onSeek: (time: number) => void;
   readonly onVolumeChange: (volume: number) => void;
+  readonly onToggleFullscreen: () => void;
+  readonly isFullscreen: boolean;
 }
 
 export function TransportBar({
@@ -21,6 +23,8 @@ export function TransportBar({
   onTogglePlay,
   onSeek,
   onVolumeChange,
+  onToggleFullscreen,
+  isFullscreen,
 }: TransportBarProps) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const isPlaying = playerState === PlayerState.PLAYING;
@@ -32,7 +36,7 @@ export function TransportBar({
   };
 
   return (
-    <div className="bg-bg-secondary border-t border-white/10">
+    <div className="bg-bg-secondary border-t border-white/10 overflow-hidden">
       {/* Timeline / Progress bar */}
       <div
         className="h-1 bg-white/15 cursor-pointer relative hover:h-1.5 transition-[height]"
@@ -50,7 +54,7 @@ export function TransportBar({
       </div>
 
       {/* Controls row */}
-      <div className="flex items-center gap-3 px-4 py-1.5">
+      <div className="flex items-center gap-3 px-5 py-2">
         <button
           className="bg-transparent border-none text-text-primary text-lg cursor-pointer p-1 leading-none hover:text-accent"
           onClick={onTogglePlay}
@@ -91,6 +95,15 @@ export function TransportBar({
             {playbackRate}x
           </span>
         )}
+
+        <button
+          className="bg-transparent border-none text-text-primary text-sm cursor-pointer p-1 leading-none hover:text-accent"
+          onClick={onToggleFullscreen}
+          data-testid="fullscreen-button"
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+        >
+          {isFullscreen ? "\u2716" : "\u26F6"}
+        </button>
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ describe("UrlBar", () => {
     isLoading: false,
     error: null,
     title: null,
+    history: [] as { url: string; title: string }[],
+    onSelectHistory: vi.fn(),
   };
 
   it("renders input and button", () => {
@@ -117,6 +119,50 @@ describe("UrlBar", () => {
     it("titleがnullの時はタイトルが表示されない", () => {
       render(<UrlBar {...defaultProps} title={null} />);
       expect(screen.queryByTestId("video-title")).not.toBeInTheDocument();
+    });
+  });
+
+  // BDD: Scenario - 履歴からURLを選択する (US-1.2)
+  describe("Scenario: 履歴からURLを選択する", () => {
+    const historyEntries = [
+      { url: "https://youtube.com/watch?v=aaa", title: "Video A" },
+      { url: "https://youtube.com/watch?v=bbb", title: "Video B" },
+      { url: "https://youtube.com/watch?v=ccc", title: "Video C" },
+    ];
+
+    it("Given 過去の履歴が3件存在する When 入力欄をクリック Then ドロップダウンが表示される", () => {
+      render(<UrlBar {...defaultProps} history={historyEntries} />);
+      fireEvent.focus(screen.getByTestId("url-input"));
+      expect(screen.getByTestId("url-history-dropdown")).toBeInTheDocument();
+      expect(screen.getAllByTestId("url-history-item")).toHaveLength(3);
+    });
+
+    it("Given ドロップダウンが表示されている When 2件目の履歴を選択する Then onSelectHistoryが呼ばれる", () => {
+      const onSelectHistory = vi.fn();
+      render(
+        <UrlBar
+          {...defaultProps}
+          history={historyEntries}
+          onSelectHistory={onSelectHistory}
+        />,
+      );
+      fireEvent.focus(screen.getByTestId("url-input"));
+      const items = screen.getAllByTestId("url-history-item");
+      fireEvent.mouseDown(items[1]);
+      expect(onSelectHistory).toHaveBeenCalledWith(historyEntries[1]);
+    });
+
+    it("履歴が空の場合はドロップダウンが表示されない", () => {
+      render(<UrlBar {...defaultProps} history={[]} />);
+      fireEvent.focus(screen.getByTestId("url-input"));
+      expect(screen.queryByTestId("url-history-dropdown")).not.toBeInTheDocument();
+    });
+
+    it("履歴にはタイトルとURLが表示される", () => {
+      render(<UrlBar {...defaultProps} history={historyEntries} />);
+      fireEvent.focus(screen.getByTestId("url-input"));
+      expect(screen.getByText("Video A")).toBeInTheDocument();
+      expect(screen.getByText("https://youtube.com/watch?v=aaa")).toBeInTheDocument();
     });
   });
 

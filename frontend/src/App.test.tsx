@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
 
@@ -25,6 +25,37 @@ vi.mock("./hooks/useYouTubePlayer", () => ({
   }),
 }));
 
+/** Helper: route fetch calls to oEmbed or backend mocks */
+function setupFetchMock(options: {
+  oembedTitle?: string | null;
+  backendResponse?: { status: number; body: object };
+}) {
+  (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+    (url: string) => {
+      if (url.includes("oembed")) {
+        if (options.oembedTitle) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ title: options.oembedTitle }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        return Promise.resolve(new Response("Not Found", { status: 404 }));
+      }
+      if (url === "/api/resolve" && options.backendResponse) {
+        return Promise.resolve(
+          new Response(JSON.stringify(options.backendResponse.body), {
+            status: options.backendResponse.status,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.reject(new Error("Unexpected fetch: " + url));
+    },
+  );
+}
+
 describe("App - US-1.1: URLから動画を読み込む", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -44,15 +75,14 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
   // BDD Scenario: 有効なYouTube URLで動画を読み込む
   // ==========================================================
   describe("Scenario: 有効なYouTube URLで動画を読み込む", () => {
-    it("Given ユーザーがStream Player Webを開いている When YouTube URLを入力してGoをクリック Then YouTube IFrame Playerに動画が読み込まれる", async () => {
+    it("Given ユーザーがStream Player Webを開いている When YouTube URLを入力してGoをクリック Then 動画が読み込まれタイトルが表示される", async () => {
+      setupFetchMock({ oembedTitle: "Rick Astley - Never Gonna Give You Up" });
+
       render(<App />);
 
-      // When: URL入力欄に有効なYouTube URLを入力する
       fireEvent.change(screen.getByTestId("url-input"), {
         target: { value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
       });
-
-      // And: Goボタンをクリックする
       fireEvent.click(screen.getByTestId("url-submit"));
 
       // Then: YouTube IFrame Playerに動画が読み込まれる
@@ -60,13 +90,17 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
         expect(mockLoadVideo).toHaveBeenCalledWith("dQw4w9WgXcQ");
       });
 
-      // And: URL入力欄の下部に動画タイトル(URL)が表示される
+      // And: URL入力欄の下部に動画タイトルが表示される（URLではなくタイトル）
       await waitFor(() => {
-        expect(screen.getByTestId("video-title")).toBeInTheDocument();
+        expect(screen.getByTestId("video-title")).toHaveTextContent(
+          "Rick Astley - Never Gonna Give You Up",
+        );
       });
     });
 
-    it("youtu.be 短縮URLでも動画が読み込まれる", async () => {
+    it("youtu.be 短縮URLでも動画が読み込まれタイトルが表示される", async () => {
+      setupFetchMock({ oembedTitle: "Short URL Video" });
+
       render(<App />);
 
       fireEvent.change(screen.getByTestId("url-input"), {
@@ -76,10 +110,15 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
 
       await waitFor(() => {
         expect(mockLoadVideo).toHaveBeenCalledWith("dQw4w9WgXcQ");
+        expect(screen.getByTestId("video-title")).toHaveTextContent(
+          "Short URL Video",
+        );
       });
     });
 
     it("embed URLでも動画が読み込まれる", async () => {
+      setupFetchMock({ oembedTitle: "Embed Video" });
+
       render(<App />);
 
       fireEvent.change(screen.getByTestId("url-input"), {
@@ -91,6 +130,24 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
         expect(mockLoadVideo).toHaveBeenCalledWith("dQw4w9WgXcQ");
       });
     });
+
+    it("oEmbedでタイトル取得失敗時はエラーが表示されプレイヤーは変化しない", async () => {
+      setupFetchMock({ oembedTitle: null });
+
+      render(<App />);
+
+      fireEvent.change(screen.getByTestId("url-input"), {
+        target: { value: "https://www.youtube.com/watch?v=XXXXXXXXXXX" },
+      });
+      fireEvent.click(screen.getByTestId("url-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("url-error")).toHaveTextContent(
+          "動画が見つかりませんでした",
+        );
+      });
+      expect(mockLoadVideo).not.toHaveBeenCalled();
+    });
   });
 
   // ==========================================================
@@ -98,6 +155,8 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
   // ==========================================================
   describe("Scenario: 読み込み中のUI状態", () => {
     it("Given ユーザーがURLを入力してGoをクリック Then 完了後にGoに戻り入力欄が有効化される", async () => {
+      setupFetchMock({ oembedTitle: "Test Video" });
+
       render(<App />);
 
       fireEvent.change(screen.getByTestId("url-input"), {
@@ -105,7 +164,6 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
       });
       fireEvent.click(screen.getByTestId("url-submit"));
 
-      // After completion: ボタンがGoに戻り、入力欄が有効化される
       await waitFor(() => {
         expect(screen.getByTestId("url-submit")).toHaveTextContent("Go");
         expect(screen.getByTestId("url-input")).not.toBeDisabled();
@@ -113,12 +171,13 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
     });
 
     it("バックエンドAPIフォールバック中はLoading状態が維持される", async () => {
-      // Simulate slow backend response
       let resolveResponse!: (value: Response) => void;
       const fetchPromise = new Promise<Response>((resolve) => {
         resolveResponse = resolve;
       });
-      (globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(fetchPromise);
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
+        fetchPromise,
+      );
 
       render(<App />);
 
@@ -155,26 +214,54 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
         expect(screen.getByTestId("url-input")).not.toBeDisabled();
       });
     });
+
+    it("YouTube oEmbedフェッチ中もLoading状態が維持される", async () => {
+      let resolveOembed!: (value: Response) => void;
+      const oembedPromise = new Promise<Response>((resolve) => {
+        resolveOembed = resolve;
+      });
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
+        oembedPromise,
+      );
+
+      render(<App />);
+
+      fireEvent.change(screen.getByTestId("url-input"), {
+        target: { value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+      });
+      fireEvent.click(screen.getByTestId("url-submit"));
+
+      // During loading
+      await waitFor(() => {
+        expect(screen.getByTestId("url-submit")).toHaveTextContent(
+          "Loading...",
+        );
+        expect(screen.getByTestId("url-input")).toBeDisabled();
+      });
+
+      // Resolve oEmbed
+      resolveOembed(
+        new Response(JSON.stringify({ title: "Test Video" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      // After completion
+      await waitFor(() => {
+        expect(screen.getByTestId("url-submit")).toHaveTextContent("Go");
+        expect(screen.getByTestId("url-input")).not.toBeDisabled();
+      });
+    });
   });
 
   // ==========================================================
   // BDD Scenario: 無効なURLを入力する
   // ==========================================================
   describe("Scenario: 無効なURLを入力する", () => {
-    it("Given ユーザーがStream Player Webを開いている When 無効なURLを入力してGoをクリック Then 赤字のエラーメッセージが表示される And YouTube IFrame Playerは変化しない", async () => {
-      // Backend returns error for invalid URL
-      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Response(JSON.stringify({ detail: "Invalid URL provided" }), {
-          status: 422,
-          headers: { "Content-Type": "application/json" },
-        }),
-      );
-
+    it("URL形式でない文字列を入力するとバリデーションエラーが表示されプレイヤーは変化しない", async () => {
       render(<App />);
 
-      // When: 無効なURLを入力してGoをクリック
-      // Note: "invalid-url" is exactly 11 chars matching video ID pattern,
-      // so we use a longer string that won't match extractVideoId
       fireEvent.change(screen.getByTestId("url-input"), {
         target: { value: "not-a-valid-url" },
       });
@@ -183,11 +270,33 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
       // Then: エラーメッセージが表示される
       await waitFor(() => {
         expect(screen.getByTestId("url-error")).toHaveTextContent(
-          "Invalid URL provided",
+          "有効なURLを入力してください",
         );
       });
 
-      // And: YouTube IFrame Playerは変化しない (loadVideoが呼ばれない)
+      // And: YouTube IFrame Playerは変化しない
+      expect(mockLoadVideo).not.toHaveBeenCalled();
+      // And: fetchも呼ばれない（バリデーションで弾かれる）
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it("バックエンドがエラーを返した場合もエラーメッセージが表示される", async () => {
+      setupFetchMock({
+        backendResponse: { status: 422, body: { detail: "Invalid URL provided" } },
+      });
+
+      render(<App />);
+
+      fireEvent.change(screen.getByTestId("url-input"), {
+        target: { value: "https://invalid-site.example/foo" },
+      });
+      fireEvent.click(screen.getByTestId("url-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("url-error")).toHaveTextContent(
+          "Invalid URL provided",
+        );
+      });
       expect(mockLoadVideo).not.toHaveBeenCalled();
     });
 
@@ -212,16 +321,9 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
     });
 
     it("エラー後に有効なURLで再送信するとエラーがクリアされる", async () => {
-      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Response(JSON.stringify({ detail: "Invalid URL" }), {
-          status: 422,
-          headers: { "Content-Type": "application/json" },
-        }),
-      );
-
       render(<App />);
 
-      // First attempt: invalid URL → error
+      // First attempt: invalid text → validation error
       fireEvent.change(screen.getByTestId("url-input"), {
         target: { value: "not-a-valid-url" },
       });
@@ -231,7 +333,9 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
         expect(screen.getByTestId("url-error")).toBeInTheDocument();
       });
 
-      // Second attempt: valid YouTube URL → error cleared
+      // Second attempt: valid YouTube URL → success
+      setupFetchMock({ oembedTitle: "Recovery Video" });
+
       fireEvent.change(screen.getByTestId("url-input"), {
         target: { value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
       });
@@ -266,17 +370,17 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
   // ==========================================================
   describe("Backend fallback via /api/resolve", () => {
     it("YouTube以外のURLはバックエンドAPIで解決しタイトルを表示する", async () => {
-      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Response(
-          JSON.stringify({
+      setupFetchMock({
+        backendResponse: {
+          status: 200,
+          body: {
             url: "https://example.com/video",
             title: "Resolved Video Title",
             duration: 300,
             video_id: "resolvedId123",
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      );
+          },
+        },
+      });
 
       render(<App />);
 
@@ -285,7 +389,6 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
       });
       fireEvent.click(screen.getByTestId("url-submit"));
 
-      // fetch is called with correct URL
       await waitFor(() => {
         expect(globalThis.fetch).toHaveBeenCalledWith("/api/resolve", {
           method: "POST",
@@ -294,13 +397,141 @@ describe("App - US-1.1: URLから動画を読み込む", () => {
         });
       });
 
-      // Video loaded and title displayed
       await waitFor(() => {
         expect(mockLoadVideo).toHaveBeenCalledWith("resolvedId123");
         expect(screen.getByTestId("video-title")).toHaveTextContent(
           "Resolved Video Title",
         );
       });
+    });
+  });
+
+  // ==========================================================
+  // BDD Scenario: 動画読み込み成功時に履歴が保存される (US-1.2)
+  // ==========================================================
+  describe("Scenario: 動画読み込み成功時に履歴が保存される (US-1.2)", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("有効なYouTube URLで動画を読み込むとlocalStorageに履歴が保存される", async () => {
+      setupFetchMock({ oembedTitle: "Saved Video Title" });
+
+      render(<App />);
+
+      fireEvent.change(screen.getByTestId("url-input"), {
+        target: { value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+      });
+      fireEvent.click(screen.getByTestId("url-submit"));
+
+      await waitFor(() => {
+        expect(mockLoadVideo).toHaveBeenCalledWith("dQw4w9WgXcQ");
+      });
+
+      const stored = JSON.parse(
+        localStorage.getItem("stream_player_url_history")!,
+      );
+      expect(stored).toHaveLength(1);
+      expect(stored[0].url).toBe(
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      );
+      expect(stored[0].title).toBe("Saved Video Title");
+    });
+
+    it("履歴から選択すると動画の読み込みが開始される", async () => {
+      localStorage.setItem(
+        "stream_player_url_history",
+        JSON.stringify([
+          { url: "https://www.youtube.com/watch?v=aaaaaaaaaaa", title: "History 1" },
+          { url: "https://www.youtube.com/watch?v=bbbbbbbbbbb", title: "History 2" },
+        ]),
+      );
+
+      setupFetchMock({ oembedTitle: "History 2" });
+
+      render(<App />);
+
+      // Open dropdown
+      fireEvent.focus(screen.getByTestId("url-input"));
+      expect(screen.getByTestId("url-history-dropdown")).toBeInTheDocument();
+
+      // Select second item (mouseDown triggers onMouseDown handler)
+      const items = screen.getAllByTestId("url-history-item");
+      await act(async () => {
+        fireEvent.mouseDown(items[1]);
+      });
+
+      await waitFor(() => {
+        expect(mockLoadVideo).toHaveBeenCalledWith("bbbbbbbbbbb");
+      });
+    });
+  });
+
+  // ==========================================================
+  // BDD Scenario: フルスクリーン表示 (US-1.4)
+  // ==========================================================
+  describe("Scenario: フルスクリーン表示 (US-1.4)", () => {
+    it("Given 通常表示 Then すべてのUI要素が表示されている", () => {
+      render(<App />);
+      expect(screen.getByTestId("url-input")).toBeInTheDocument();
+      expect(screen.getByTestId("video-player")).toBeInTheDocument();
+      expect(screen.getByTestId("play-button")).toBeInTheDocument();
+      expect(screen.getByTestId("resize-sash")).toBeInTheDocument();
+      expect(screen.getByTestId("bottom-panels")).toBeInTheDocument();
+    });
+
+    let fullscreenElement: Element | null = null;
+
+    beforeEach(() => {
+      fullscreenElement = null;
+      Object.defineProperty(document, "fullscreenElement", {
+        get: () => fullscreenElement,
+        configurable: true,
+      });
+    });
+
+    function enterFullscreen() {
+      act(() => {
+        fullscreenElement = document.createElement("div");
+        document.dispatchEvent(new Event("fullscreenchange"));
+      });
+    }
+
+    function exitFullscreen() {
+      act(() => {
+        fullscreenElement = null;
+        document.dispatchEvent(new Event("fullscreenchange"));
+      });
+    }
+
+    it("Given フルスクリーン状態 Then 動画以外のUI要素が非表示になる", () => {
+      render(<App />);
+
+      enterFullscreen();
+
+      // Video player should still be visible
+      expect(screen.getByTestId("video-player")).toBeInTheDocument();
+
+      // Other UI elements should be hidden
+      expect(screen.queryByTestId("url-input")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("play-button")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("resize-sash")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("bottom-panels")).not.toBeInTheDocument();
+    });
+
+    it("Given フルスクリーン状態 When Escで解除 Then 元のレイアウトに復元される", () => {
+      render(<App />);
+
+      enterFullscreen();
+      expect(screen.queryByTestId("url-input")).not.toBeInTheDocument();
+
+      exitFullscreen();
+
+      // All elements should be restored
+      expect(screen.getByTestId("url-input")).toBeInTheDocument();
+      expect(screen.getByTestId("play-button")).toBeInTheDocument();
+      expect(screen.getByTestId("resize-sash")).toBeInTheDocument();
+      expect(screen.getByTestId("bottom-panels")).toBeInTheDocument();
     });
   });
 });

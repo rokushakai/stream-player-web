@@ -13,6 +13,8 @@ describe("TransportBar", () => {
     onTogglePlay: vi.fn(),
     onSeek: vi.fn(),
     onVolumeChange: vi.fn(),
+    onToggleFullscreen: vi.fn(),
+    isFullscreen: false,
   };
 
   it("renders play button with play icon when paused", () => {

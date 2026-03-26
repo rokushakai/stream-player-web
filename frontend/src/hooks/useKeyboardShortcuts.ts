@@ -11,6 +11,7 @@ interface UseKeyboardShortcutsOptions {
   volume: number;
   duration: number;
   playerState: PlayerState;
+  addMarker?: () => void;
 }
 
 export function useKeyboardShortcuts({
@@ -21,6 +22,7 @@ export function useKeyboardShortcuts({
   volume,
   duration,
   playerState,
+  addMarker,
 }: UseKeyboardShortcutsOptions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -101,10 +103,16 @@ export function useKeyboardShortcuts({
             seekRelative(1 / 30);
           }
           break;
+
+        // Add marker at current position
+        case "m":
+          e.preventDefault();
+          addMarker?.();
+          break;
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlay, seekRelative, seekTo, setVolume, volume, duration, playerState]);
+  }, [togglePlay, seekRelative, seekTo, setVolume, volume, duration, playerState, addMarker]);
 }

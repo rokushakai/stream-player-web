@@ -233,4 +233,23 @@ describe("useKeyboardShortcuts - US-1.3: 基本再生操作", () => {
       document.body.removeChild(select);
     });
   });
+
+  // ==========================================================
+  // BDD Scenario: Mキーでマーカーを追加する (US-2.1)
+  // ==========================================================
+  describe("Scenario: Mキーでマーカーを追加する", () => {
+    it("Mキーを押すとaddMarkerが呼ばれる", () => {
+      const mockAddMarker = vi.fn();
+      renderHook(() =>
+        useKeyboardShortcuts({ ...defaultOptions, addMarker: mockAddMarker }),
+      );
+      fireKey("m");
+      expect(mockAddMarker).toHaveBeenCalledOnce();
+    });
+
+    it("addMarkerが未設定でもエラーにならない", () => {
+      renderHook(() => useKeyboardShortcuts(defaultOptions));
+      expect(() => fireKey("m")).not.toThrow();
+    });
+  });
 });

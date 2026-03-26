@@ -7,6 +7,7 @@ import { BottomPanels } from "./components/BottomPanels";
 import { useYouTubePlayer } from "./hooks/useYouTubePlayer";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useUrlHistory } from "./hooks/useUrlHistory";
+import { useMarkers } from "./hooks/useMarkers";
 import type { UrlHistoryEntry } from "./hooks/useUrlHistory";
 import {
   extractVideoId,
@@ -23,6 +24,7 @@ function App() {
   const [panelHeight, setPanelHeight] = useState(200);
   const containerRef = useRef<HTMLDivElement>(null);
   const { history, addEntry } = useUrlHistory();
+  const { markers, addMarker, updateMarkerMemo, deleteMarker, swapMarkerLabels } = useMarkers();
 
   const {
     loadVideo,
@@ -114,6 +116,10 @@ function App() {
     };
   }, []);
 
+  const handleAddMarker = useCallback(() => {
+    addMarker(currentTime);
+  }, [addMarker, currentTime]);
+
   useKeyboardShortcuts({
     togglePlay,
     seekRelative,
@@ -122,6 +128,7 @@ function App() {
     volume,
     duration,
     playerState,
+    addMarker: handleAddMarker,
   });
 
   const handleToggleFullscreen = useCallback(() => {
@@ -183,6 +190,12 @@ function App() {
         <BottomPanels
           className="flex-shrink-0"
           style={{ height: panelHeight }}
+          markers={markers}
+          onAddMarker={handleAddMarker}
+          onSeekToMarker={seekTo}
+          onUpdateMemo={updateMarkerMemo}
+          onDeleteMarker={deleteMarker}
+          onSwapMarkerLabels={swapMarkerLabels}
         />
       )}
     </div>
